@@ -249,7 +249,7 @@ function CreatePlan {
     $plandetailsfile = Get-ChildItem C:\plannermigrator\exportdirectory\ | ? { $_.name -like "*-planDetails.json" }
     $PlanDetailsBody = get-content "C:\plannermigrator\exportdirectory\$($plandetailsfile.name)" | ConvertFrom-Json | ConvertTo-Json
     write-host "Assigning Categories $plandetailsbody"
-    start-sleep 5
+    start-sleep 2
     $apiUri = "https://graph.microsoft.com/v1.0/planner/plans/$($plan.id)/details"
     $existing = Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)" } -Uri $apiUri -Method Get
     Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)"; 'If-Match' = $existing.'@odata.etag' } -ContentType 'application/json' -Body $PlanDetailsBody -Uri $apiUri -Method Patch
@@ -334,7 +334,7 @@ function CreateTasks {
     $TaskBody
     $task = (Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)" } -ContentType 'application/json' -Body $TaskBody -Uri $apiUri -Method Post) 
 
-    start-sleep 5
+    start-sleep 2
 
     $apiUri = "https://graph.microsoft.com/v1.0/planner/tasks/$($task.id)/details"
     write-host "getting created task Details"
