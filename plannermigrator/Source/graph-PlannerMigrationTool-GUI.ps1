@@ -234,10 +234,10 @@ function CreatePlan {
     $RequestBody = @"
 
     {
-        'owner': '$($groupid)',
-        'title': '$($title)'
+        "owner": "$($groupid)",
+        "title": $($title | ConvertTo-Json)
       }
-"@
+"@ | ConvertFrom-Json | ConvertTo-Json
     
 
     write-host $RequestBody
@@ -247,7 +247,7 @@ function CreatePlan {
     $Plan = (Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)" } -ContentType 'application/json' -Body $RequestBody -Uri $apiUri -Method Post)
 
     $plandetailsfile = Get-ChildItem C:\plannermigrator\exportdirectory\ | ? { $_.name -like "*-planDetails.json" }
-    $PlanDetailsBody = get-content "C:\plannermigrator\exportdirectory\$($plandetailsfile.name)"
+    $PlanDetailsBody = get-content "C:\plannermigrator\exportdirectory\$($plandetailsfile.name)" | ConvertFrom-Json | ConvertTo-Json
     write-host "Assigning Categories $plandetailsbody"
     start-sleep 5
     $apiUri = "https://graph.microsoft.com/v1.0/planner/plans/$($plan.id)/details"
@@ -288,11 +288,11 @@ function CreateBuckets {
         $RequestBody = @"
 
     {
-        'name': '$($bucket.name)',
-        'planId': '$($plan.id)',
-        'orderHint': '$(" !")'
+        "name": $($bucket.name | ConvertTo-Json),
+        "planId": "$($plan.id)",
+        "orderHint": " !"
       }
-"@
+"@ | ConvertFrom-Json | ConvertTo-Json
         write-host $RequestBody -Verbose
         $apiUri = "https://graph.microsoft.com/v1.0/planner/buckets"
         ##Invoke Group Request
@@ -405,26 +405,29 @@ function importplanner {
         if (!($task.dueDateTime)) {
             $TaskBody = @"
             {
-                "planId": '$($NewTaskBucket.planid)',
-                "bucketId": '$($NewTaskBucket.id)',
-                "title": '$($task.title)',
-                "percentComplete": '$($task.percentComplete)'
+                "planId": "$($NewTaskBucket.planid)",
+                "bucketId": "$($NewTaskBucket.id)",
+                "title": $($task.title | ConvertTo-Json),
+                "percentComplete": "$($task.percentComplete)"
     
               }
-"@
+"@ | ConvertFrom-Json | ConvertTo-Json
     
         }
     
         else {
             $TaskBody = @"
         {
-            "planId": '$($NewTaskBucket.planid)',
-            "bucketId": '$($NewTaskBucket.id)',
-            "title": '$($task.title)',
-            "percentComplete": '$($task.percentComplete)',
-            "dueDateTime":  '$($task.dueDateTime)'
+            "planId": "$($NewTaskBucket.planid)",
+            "bucketId": "$($NewTaskBucket.id)",
+            "title": $($task.title | ConvertTo-Json),
+            "percentComplete": "$($task.percentComplete)",
+            "dueDateTime":  "$($task.dueDateTime)"
 
           }
+"@ | ConvertFrom-Json | ConvertTo-Json
+        }
+
         $fancySingleQuotes = "[\u2019\u2018]"
         $fancyDoubleQuotes = "[\u201C\u201D]"
 
@@ -533,7 +536,7 @@ function translateUsers {
         }
     }
 }
-"@
+"@ | ConvertFrom-Json | ConvertTo-Json
             
                 write-host "Updating $($newtask.title)" -ForegroundColor green
                 $apiUri = "https://graph.microsoft.com/v1.0/planner/tasks/$($newtask.id)"
