@@ -113,7 +113,7 @@ function ListGroups {
     }
     else {
     
-        $apiUri = "https://graph.microsoft.com/beta/groups/?`$filter=groupTypes/any(c:c+eq+'Unified')"
+        $apiUri = "https://graph.microsoft.com/v1.0/groups/?`$filter=groupTypes/any(c:c+eq+'Unified')"
         $Grouplist = RunQueryandEnumerateResults -token $token.accesstoken -apiUri $apiUri
     }
     Write-host Found $grouplist.count Groups to process -foregroundcolor yellow
@@ -141,7 +141,7 @@ function ListPlans {
         $GroupID
     )
 
-    $apiUri = "https://graph.microsoft.com/beta/groups/$($Groupid)/planner/plans"
+    $apiUri = "https://graph.microsoft.com/v1.0/groups/$($Groupid)/planner/plans"
     $Plans = RunQueryandEnumerateResults -apiUri $apiUri -token $token.accesstoken
 
     Return $plans
@@ -169,7 +169,7 @@ function exportplanner {
     
 
 
-    $apiUri = "https://graph.microsoft.com/beta/planner/plans/$($planid)/details"
+    $apiUri = "https://graph.microsoft.com/v1.0/planner/plans/$($planid)/details"
     $PlanDetails = (Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)" } -Uri $apiUri -Method Get)
   
     $PlanDetailsExport = [PSCustomObject]@{
@@ -179,7 +179,7 @@ function exportplanner {
    
     $PlanDetailsExport  | ConvertTo-Json |  out-file "c:\plannermigrator\exportdirectory\$($planid)-planDetails.json" -NoClobber -Append
 
-    $apiUri = "https://graph.microsoft.com/beta/planner/plans/$($planid)/buckets"
+    $apiUri = "https://graph.microsoft.com/v1.0/planner/plans/$($planid)/buckets"
     $buckets = RunQueryandEnumerateResults -apiUri $apiUri -token $token.accesstoken
     if ($buckets) {
         $buckets | ConvertTo-Json |  out-file "c:\plannermigrator\exportdirectory\$($planid)-buckets.json" -NoClobber -Append
@@ -187,7 +187,7 @@ function exportplanner {
             
         
     
-    $apiUri = "https://graph.microsoft.com/beta/planner/plans/$($planid)/tasks"
+    $apiUri = "https://graph.microsoft.com/v1.0/planner/plans/$($planid)/tasks"
     
     $tasks = RunQueryandEnumerateResults -apiUri $apiUri -token $token.accesstoken
     if ($tasks) {
@@ -195,7 +195,7 @@ function exportplanner {
 
         foreach ($task in $tasks) {
 
-            $apiUri = "https://graph.microsoft.com/beta/planner/tasks/$($task.id)/details"
+            $apiUri = "https://graph.microsoft.com/v1.0/planner/tasks/$($task.id)/details"
             $taskdetails = (Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)" } -Uri $apiUri -Method Get)
             $taskdetails  | ConvertTo-Json |  out-file "c:\plannermigrator\exportdirectory\$($task.id)-taskdetails.json" -NoClobber -Append
             start-sleep 1
@@ -242,7 +242,7 @@ function CreatePlan {
 
     write-host $RequestBody
       
-    $apiUri = "https://graph.microsoft.com/beta/planner/plans"
+    $apiUri = "https://graph.microsoft.com/v1.0/planner/plans"
     ##Invoke Group Request
     $Plan = (Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)" } -ContentType 'application/json' -Body $RequestBody -Uri $apiUri -Method Post)
 
@@ -250,7 +250,7 @@ function CreatePlan {
     $PlanDetailsBody = get-content "C:\plannermigrator\exportdirectory\$($plandetailsfile.name)"
     write-host "Assigning Categories $plandetailsbody"
     start-sleep 5
-    $apiUri = "https://graph.microsoft.com/beta/planner/plans/$($plan.id)/details"
+    $apiUri = "https://graph.microsoft.com/v1.0/planner/plans/$($plan.id)/details"
     $existing = Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)" } -Uri $apiUri -Method Get
     Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)"; 'If-Match' = $existing.'@odata.etag' } -ContentType 'application/json' -Body $PlanDetailsBody -Uri $apiUri -Method Patch
 
@@ -294,7 +294,7 @@ function CreateBuckets {
       }
 "@
         write-host $RequestBody -Verbose
-        $apiUri = "https://graph.microsoft.com/beta/planner/buckets"
+        $apiUri = "https://graph.microsoft.com/v1.0/planner/buckets"
         ##Invoke Group Request
         $Bucket = (Invoke-RestMethod -Headers @{Authorization = "Bearer $($Token.AccessToken)" } -ContentType 'application/json' -Body $RequestBody -Uri $apiUri -Method Post)
         $Newbuckets += $bucket
@@ -463,7 +463,7 @@ function importplanner {
             $JSONBody = $CategoryBody | ConvertTo-Json
             $jsonbody
             write-host "Updating $newTask" -ForegroundColor green
-            $apiUri = "https://graph.microsoft.com/beta/planner/tasks/$($newTask.id)"
+            $apiUri = "https://graph.microsoft.com/v1.0/planner/tasks/$($newTask.id)"
             Invoke-RestMethod -Headers @{Authorization = "Bearer $($token.accesstoken)"; 'If-Match' = $newTask.'@odata.etag' } -ContentType 'application/json' -Body $JSONBody -Uri $apiUri -Method Patch
 
         }
