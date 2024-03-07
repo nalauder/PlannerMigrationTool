@@ -283,6 +283,8 @@ function CreateBuckets {
 
     )
 
+    $buckets = [System.Collections.Stack]::new(@($buckets))
+
     $NewBuckets = @()
     foreach ($bucket in $buckets) {
         $RequestBody = @"
@@ -399,9 +401,9 @@ function importplanner {
 
     foreach ($task in $tasks) {
 
-        $OldTaskBucket = $buckets | ? { $_.id -like $task.bucketid }
+        $OldTaskBucket = $buckets | ? { $_.id -eq $task.bucketid }
 
-        $NewTaskBucket = $NewBuckets | ? { $_.name -like $OldTaskBucket.name }
+        $NewTaskBucket = $NewBuckets | ? { $_.name -eq $OldTaskBucket.name }
         if (!($task.dueDateTime)) {
             $TaskBody = @"
             {
@@ -439,20 +441,12 @@ function importplanner {
         $checklists = Get-Member -InputObject $taskdetails.checklist | ? { $_.membertype -like "NoteProperty" }
         foreach ($checklist in $checklists) {
             $taskdetails.checklist.($checklist.name).orderHint = " !"
-            $taskdetails.checklist.($checklist.name).lastModifiedBy = ""
-            $taskdetails.checklist.($checklist.name).lastModifiedDateTime = ""
+            $taskdetails.checklist.($checklist.name) = $taskdetails.checklist.($checklist.name) | Select-Object -Property * -ExcludeProperty 'lastModifiedBy', 'lastModifiedDateTime'
         }
-        $TaskDetails.id = ""
-        $TaskDetails.'@odata.context' = ""
-        $TaskDetails.'@odata.etag' = ""
-        $TaskDetails.references = ""
+
+        $TaskDetails = $TaskDetails | Select-Object -Property * -ExcludeProperty '@odata.context', 'id', '@odata.etag', 'references', 'lastModifiedDateTime', 'lastModifiedby'
 
         $TaskDetailsBody = $TaskDetails | ConvertTo-Json
-        $TaskDetailsBody = $taskdetailsbody.replace('"lastModifiedDateTime":  "",', '')
-        $TaskDetailsBody = $taskdetailsbody.replace('"lastModifiedby":  "",', '')
-        $TaskDetailsBody = $taskdetailsbody.replace('"lastModifiedBy":  ""', '')
-        $TaskDetailsBody = $taskdetailsbody.replace('"lastModifiedby":  "@{user=}"', '')
-        $TaskDetailsBody = $taskdetailsbody.replace('"references":  "",', '')
         $TaskDetailsBody = $taskdetailsbody.replace('"orderHint":  " !",', '"orderHint":  " !"')
 
         $newTask = CreateTasks -token $token -TaskBody $TaskBody -TaskDetailsBody $TaskDetailsBody
@@ -715,7 +709,7 @@ $var_MigrateButton.Add_Click( {
         Get-ChildItem -Path "C:\plannermigrator\exportdirectory" | remove-item -Force
         $var_MigrateProgress.value = 100 
         $var_NewMigrationButton.visibility = "visible"
-
+        write-host "Done!"
     })
 
 $var_NewMigrationButton.Add_Click( {
