@@ -107,7 +107,7 @@ function ListGroups {
     ##Gets Unified Groups
 
     if ($SearchTerm) {
-        $apiUri = "https://graph.microsoft.com/v1.0/groups/?`$filter=groupTypes/any(c:c+eq+'Unified') and startsWith(mail,'$SearchTerm')"
+        $apiUri = "https://graph.microsoft.com/v1.0/groups/?`$filter=groupTypes/any(c:c+eq+'Unified') and startsWith(mail,'$([System.Web.HttpUtility]::UrlEncode($SearchTerm))')"
         write-host $apiuri
         $Grouplist = RunQueryandEnumerateResults -token $token.accesstoken -apiUri $apiUri   
     }
@@ -425,11 +425,12 @@ function importplanner {
             "dueDateTime":  '$($task.dueDateTime)'
 
           }
-"@
-
-        }
+        $fancySingleQuotes = "[\u2019\u2018]"
+        $fancyDoubleQuotes = "[\u201C\u201D]"
 
         $TaskDetailsFile = Get-Content "C:\plannermigrator\exportdirectory\$($Task.id)-taskdetails.json"
+        $TaskDetailsFile = [regex]::Replace($TaskDetailsFile, $fancyDoubleQuotes, '\"')
+        $TaskDetailsFile = [regex]::Replace($TaskDetailsFile, $fancySingleQuotes, "\'")
         $TaskDetails = $TaskDetailsFile | ConvertFrom-Json 
 
         $checklists = Get-Member -InputObject $taskdetails.checklist | ? { $_.membertype -like "NoteProperty" }
